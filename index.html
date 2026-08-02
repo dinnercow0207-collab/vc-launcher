@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VCランチャー Pro (Invite Code)</title>
+    <title>VCランチャー Pro (God Auth)</title>
     <style>
         body{font-family:sans-serif;text-align:center;margin:0;padding-bottom:20px;-webkit-text-size-adjust:100%;min-height:100vh;background:#1e1f22;color:#fff}
         body.theme-line{background:#7493c0;color:#333}
@@ -156,7 +156,8 @@
     <!-- Firebase部品 -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
-      <script>
+
+    <script>
         const GOD_SECRET_KEY = "god1234"; 
 
         const firebaseConfig = {
@@ -171,7 +172,7 @@
         };
 
         firebase.initializeApp(firebaseConfig);
-        const dbRooms = firebase.database().ref("rooms_invite_code");
+        const dbRooms = firebase.database().ref("rooms_invite_code_v3");
         const dbUsers = firebase.database().ref("users_auth");
         const dbChat  = firebase.database().ref("chat_logs");
         const dbBans  = firebase.database().ref("ban_list");
@@ -181,13 +182,12 @@
         let isGodMode = false;
 
         try { config = JSON.parse(localStorage.getItem("vc_launcher_config") || '{"theme":"discord","anim":true}'); } catch(e){}
-
         function apply() {
             document.body.className = "theme-" + config.theme + " " + (config.anim ? "anim-on" : "");
             if(isGodMode) {
                 document.body.classList.add("admin-mode");
                 const rb = document.getElementById("roleBadge");
-                if(rb) { rb.innerText = "⚡ 神"; rb.style.background = "#ff007f"; }
+                if(rb) { rb.innerText = "👑 神"; rb.style.background = "#ff007f"; }
             } else {
                 document.body.classList.remove("admin-mode");
                 const rb = document.getElementById("roleBadge");
@@ -243,7 +243,7 @@
             localStorage.removeItem("vc_launcher_loginuser");
             checkLoginState();
         }
-        // 🔑 招待コードを入力して入室する処理
+
         function tryJoinRoom(roomIdx) {
             if(!loginUser) return;
             const targetRoom = rooms[roomIdx];
@@ -267,71 +267,6 @@
                 window.open(targetRoom.url, '_blank');
             });
         }
-
-        window.godBanUser = function(username, targetIsGod) {
-            if(!isGodMode) return;
-            if(targetIsGod) { alert("他の神をBANすることはできません！"); return; }
-            if(!confirm(`「${username}」を完全にBAN（追放）しますか？`)) return;
-
-            const userKey = username.replace(/[.#$\[\]]/g, "_");
-            dbBans.child(userKey).set(true).then(() => {
-                rooms.forEach(room => { if(room.users) { Object.keys(room.users).forEach(k => { if(room.users[k] === username) delete room.users[k]; }); } });
-                dbRooms.set(rooms);
-                alert(`「${username}」をBANしました。`);
-            });
-        };
-
-        function render() {
-            const list = document.getElementById("list");
-            if(!list) return; list.innerHTML = "";
-
-            if(rooms.length === 0) {
-                list.innerHTML = '<p style="color:#aaa;font-size:14px;margin-top:20px;">部屋がありません</p>';
-                return;
-            }
-
-            rooms.forEach((r, idx) => {
-                const card = document.createElement("div");
-                card.className = "room-card";
-                
-                let memberHTML = "";
-                if(r.users) {
-                    Object.keys(r.users).forEach(id => {
-                        const uname = r.users[id];
-                        const showBan = isGodMode && (uname !== loginUser);
-                        memberHTML += `<span class="user-tag">${esc(uname)}${showBan ? `<button class="ban-btn" onclick="godBanUser('${esc(uname)}', false)">BAN</button>` : ''}</span>`;
-                    });
-                }
-
-                const codeDisplay = isGodMode ? `<span style="font-size:11px; background:#4f545c; padding:2px 4px; border-radius:4px; margin-left:6px; color:#00ffcc;">🔑コード: ${esc(r.code)}</span>` : '';
-
-                card.innerHTML = `
-                    <div class="room-header">
-                        <span class="room-name">${esc(r.name)} ${codeDisplay}</span>
-                        <div class="room-controls">
-                            <button class='moveBtn upBtn admin-only-btn' data-idx='${idx}'>▲</button>
-                            <button class='moveBtn downBtn admin-only-btn' data-idx='${idx}'>▼</button>
-                            <button class='copyBtn admin-only-btn' data-url='${esc(r.code)}' title='招待コードをコピー'>📋</button>
-                            <button class='joinBtn' data-idx='${idx}'>入る</button>
-                            <button class='delBtn admin-only-btn' data-idx='${idx}'>削除</button>
-                        </div>
-                    </div>
-                    <div class="member-list">
-                        ${memberHTML || '<span style="color:#72767d; font-size:12px;">🔊 誰も入っていません</span>'}
-                    </div>
-                `;
-                list.appendChild(card);
-            });
-
-            document.querySelectorAll(".joinBtn").forEach(b => {
-                b.onclick = function() { tryJoinRoom(parseInt(this.getAttribute("data-idx"))); };
-            });
-            document.querySelectorAll(".upBtn").forEach(b => {
-                b.onclick = function() {
-                    const idx = parseInt(this.getAttribute("data-idx"));
-                    if(idx > 0) { const t = rooms[idx]; rooms[idx] = rooms[idx-1]; rooms[idx-1] = t; dbRooms.set(rooms); }
-                };
-            });
         function sendChatMessage() {
             const input = document.getElementById("msgInput");
             const text = input.value.trim();
@@ -358,7 +293,6 @@
                     if(snapshot.child(userKey).exists()) { alert("神によってこのサーバーからBANされました。"); forceLogout(); }
                 }
             });
-
             dbChat.limitToLast(50).on("value", snapshot => {
                 const logs = document.getElementById("chatLogs");
                 if(!logs) return; logs.innerHTML = "";
@@ -454,10 +388,7 @@
 
         window.onbeforeunload = function() {
             if(loginUser) { rooms.forEach(r => { if(r.users) { Object.keys(r.users).forEach(k => { if(r.users[k] === loginUser) delete r.users[k]; }); } }); dbRooms.set(rooms); }
-};
-  };
-</script>
+        };
+    </script>
 </body>
 </html>
-
-
