@@ -454,8 +454,10 @@
 
         window.onbeforeunload = function() {
             if(loginUser) { rooms.forEach(r => { if(r.users) { Object.keys(r.users).forEach(k => { if(r.users[k] === loginUser) delete r.users[k]; }); } }); dbRooms.set(rooms); }
-        };
-    </script>
+};
+  };
+</script>
 </body>
 </html>
+
 
