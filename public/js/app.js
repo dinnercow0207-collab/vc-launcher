@@ -94,7 +94,20 @@ async function selectServer(server) {
   document.getElementById('channelRail').style.display = 'flex';
   document.getElementById('currentServerName').textContent = server.name;
   document.getElementById('emptyState').style.display = 'flex';
-  document.getElementById('emptyState').textContent = `#${server.name} のチャンネルを選んでください（招待コード: ${server.invite_code}）`;
+  document.getElementById('emptyState').textContent = `#${server.name} のチャンネルを選んでください`;
+
+  const inviteBox = document.getElementById('inviteCodeBox');
+  inviteBox.innerHTML = `<span>招待コード: <span class="code">${escapeHtml(server.invite_code)}</span></span><button id="copyInviteBtn">コピー</button>`;
+  document.getElementById('copyInviteBtn').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(server.invite_code);
+      const btn = document.getElementById('copyInviteBtn');
+      btn.textContent = 'コピーした！';
+      setTimeout(() => { btn.textContent = 'コピー'; }, 1500);
+    } catch (e) {
+      alert(`招待コード: ${server.invite_code}`);
+    }
+  });
 
   const res = await fetch(`/api/servers/${server.id}/channels`);
   const data = await res.json();
@@ -384,10 +397,20 @@ async function toggleScreenShare() {
     stopScreenShare();
     return;
   }
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+    alert('このブラウザ／端末は画面共有(getDisplayMedia)に対応していません。\niPadの場合は「設定 > Safari > 詳細 > Feature Flags」に「Screen Capture」という項目があれば有効にしてから試してください。');
+    return;
+  }
+
   try {
     screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
   } catch (e) {
-    return; // ユーザーがキャンセルした場合など
+    if (e.name !== 'NotAllowedError') {
+      // ユーザーが単にキャンセルした場合(NotAllowedError)は何も表示しない
+      alert('画面共有を開始できませんでした: ' + (e.message || e.name));
+    }
+    return;
   }
   const screenTrack = screenStream.getVideoTracks()[0];
   screenTrack.onended = () => stopScreenShare();
