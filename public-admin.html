@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理画面 | VC Launcher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body style="background: var(--bg-2);">
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <div class="admin-title">🛡️ 管理画面</div>
+      <a class="admin-back" href="/app.html">← アプリに戻る</a>
+    </div>
+
+    <div id="deniedBox" style="display:none; color: var(--text-1); font-size:14px;">
+      このページは管理者専用です。
+    </div>
+
+    <div id="adminBody" style="display:none;">
+      <div class="stat-grid" id="statGrid"></div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ユーザー名</th>
+              <th>状態</th>
+              <th>登録日</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="userRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>
