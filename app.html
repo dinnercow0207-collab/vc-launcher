@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VC Launcher</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon.png">
+<link rel="icon" href="/icon.png">
+<meta name="theme-color" content="#0f1115">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VC Launcher">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app" id="appRoot" data-mobile-view="servers">
+    <!-- サーバー一覧 -->
+    <div class="rail-servers">
+      <div class="rail-title">サーバー</div>
+      <div id="serverList"></div>
+      <div class="rail-action">
+        <button id="createServerBtn">＋ サーバーを作る</button>
+        <button id="joinServerBtn">招待コードで参加</button>
+        <a href="/admin.html" id="adminLink" style="display:none; font-size:12px; color: var(--text-2); text-decoration:none; padding: 6px 2px 2px; text-align:center;">🛡️ 管理画面</a>
+      </div>
+    </div>
+
+    <!-- チャンネル一覧 -->
+    <div class="rail-channels" id="channelRail" style="display:none;">
+      <button type="button" class="mobile-back-btn" id="backToServersBtn">← サーバー一覧</button>
+      <div class="server-name" id="currentServerName"></div>
+      <div id="inviteCodeBox" class="invite-box"></div>
+
+      <div class="chan-group-label">テキスト</div>
+      <div id="textChannelList"></div>
+
+      <div class="chan-group-label" style="margin-top:10px;">ボイス</div>
+      <div id="voiceChannelList"></div>
+
+      <button class="add-channel" id="addChannelBtn">＋ チャンネルを追加</button>
+      <button class="add-channel" id="deleteServerBtn" style="display:none; color: var(--danger); margin-top:6px;">🗑 サーバーを削除</button>
+
+      <div class="me">
+        <span class="me-info" id="meInfoBtn">
+          <img id="meAvatarImg" class="me-avatar" style="display:none;" alt="">
+          <span id="meAvatarInitial" class="me-avatar me-avatar-fallback"></span>
+          <span id="meName"></span>
+        </span>
+        <button id="logoutBtn">ログアウト</button>
+      </div>
+    </div>
+
+    <!-- メイン(チャット / VC) -->
+    <div class="main-panel">
+      <div class="empty-state" id="emptyState">
+        左のサーバー一覧から選ぶか、新しいサーバーを作ってはじめましょう。
+      </div>
+
+      <div id="textView" style="display:none; flex:1; min-height:0; display:flex; flex-direction:column;">
+        <div class="main-header">
+          <button type="button" class="mobile-back-btn" id="backToChannelsBtnText">←</button>
+          <span id="textChanTitle"></span>
+        </div>        <div class="chat-scroll" id="chatScroll"></div>
+        <div class="chat-input-wrap">
+          <form id="chatForm">
+            <label class="attach-btn" for="fileInput">📎</label>
+            <input type="file" id="fileInput" accept="image/*,video/*" style="display:none;">
+            <input id="chatInput" type="text" placeholder="メッセージを入力" maxlength="500" autocomplete="off">
+            <button type="submit">送信</button>
+          </form>
+          <div id="attachPreview" class="attach-preview" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div id="voiceView" style="display:none; flex:1; min-height:0; display:flex; flex-direction:column;">
+        <div class="main-header">
+          <button type="button" class="mobile-back-btn" id="backToChannelsBtnVoice">←</button>
+          <span id="voiceChanTitle"></span>
+        </div>
+        <div class="voice-panel">
+          <div class="voice-status"><span class="live-dot"></span><span id="voiceStatusText">接続中...</span></div>
+          <div class="voice-members" id="voiceMembers"></div>
+          <div class="voice-controls">
+            <button class="vbtn" id="muteBtn">🎤 ミュート</button>
+            <button class="vbtn" id="audioShareBtn">🎵 音声ファイル共有</button>
+            <button class="vbtn danger" id="leaveVoiceBtn">通話を退出</button>
+          </div>
+          <input type="file" id="audioFileInput" accept="audio/*" style="display:none;">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- サーバー作成モーダル -->
+  <div class="modal-overlay" id="createModal">
+    <div class="modal">
+      <button class="modal-close" data-close="createModal">✕</button>
+      <h3>新しいサーバーを作る</h3>
+      <div class="field"><input id="newServerName" placeholder="サーバー名" maxlength="30"></div>
+      <div class="modal-actions">
+        <button data-close="createModal">キャンセル</button>
+        <button class="primary" id="confirmCreateServer">作成</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 招待コード参加モーダル -->
+  <div class="modal-overlay" id="joinModal">
+    <div class="modal">
+      <button class="modal-close" data-close="joinModal">✕</button>
+      <h3>招待コードで参加</h3>
+      <div class="field"><input id="inviteCodeInput" placeholder="招待コード"></div>
+      <div class="modal-actions">
+        <button data-close="joinModal">キャンセル</button>
+        <button class="primary" id="confirmJoinServer">参加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- チャンネル作成モーダル -->
+  <div class="modal-overlay" id="channelModal">
+    <div class="modal">
+      <button class="modal-close" data-close="channelModal">✕</button>
+      <h3>チャンネルを追加</h3>
+      <div class="field" style="margin-bottom:12px;"><input id="newChannelName" placeholder="チャンネル名" maxlength="20"></div>
+      <div class="modal-actions">
+        <button data-close="channelModal" style="flex:1;" id="typeText">💬 テキスト</button>
+        <button data-close="channelModal" style="flex:1;" id="typeVoice">🔊 ボイス</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- チャンネル操作モーダル -->
+  <div class="modal-overlay" id="channelActionModal">
+    <div class="modal">
+      <button class="modal-close" data-close="channelActionModal">✕</button>
+      <h3>チャンネル操作</h3>
+      <div class="modal-actions" style="flex-direction:column; gap:8px;">
+        <button id="channelActionRename" style="width:100%;">✏️ 名前を変更</button>
+        <button id="channelActionDelete" style="width:100%; color: var(--danger);">🗑 削除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- プロフィール編集モーダル -->
+  <div class="modal-overlay" id="profileModal">
+    <div class="modal">
+      <button class="modal-close" data-close="profileModal">✕</button>
+      <h3>プロフィール設定</h3>
+
+      <div class="field" style="text-align:center; margin-bottom:14px;">
+        <img id="profileAvatarPreview" class="profile-avatar-preview" style="display:none;" alt="">
+        <div id="profileAvatarPreviewFallback" class="profile-avatar-preview profile-avatar-fallback"></div>
+        <label for="profileAvatarInput" class="profile-avatar-edit-btn">画像を選ぶ</label>
+        <input type="file" id="profileAvatarInput" accept="image/*" style="display:none;">
+      </div>
+
+      <div class="field">
+        <label>ユーザー名</label>
+        <input id="profileUsernameInput" type="text" maxlength="20">
+      </div>
+      <div class="field">
+        <label>現在のパスワード(変更には必須)</label>
+        <input id="profileCurrentPasswordInput" type="password" autocomplete="current-password">
+      </div>
+      <div class="field">
+        <label>新しいパスワード(変更する場合のみ入力)</label>
+        <input id="profileNewPasswordInput" type="password" autocomplete="new-password">
+      </div>
+
+      <div class="auth-error" id="profileError"></div>
+
+      <div class="modal-actions">
+        <button data-close="profileModal">キャンセル</button>
+        <button class="primary" id="profileSaveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
